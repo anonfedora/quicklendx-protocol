@@ -16,7 +16,7 @@ mod defaults;
 
 use invoice::{Invoice, InvoiceStatus, InvoiceStorage};
 use errors::QuickLendXError;
-use verification::verify_invoice_data;
+use verification::{verify_invoice_data, submit_kyc_application, verify_business, reject_business, get_business_verification_status, BusinessVerificationStorage};
 use events::{emit_invoice_uploaded, emit_invoice_verified};
 use bid::{Bid, BidStatus, BidStorage};
 use investment::{Investment, InvestmentStatus, InvestmentStorage};
@@ -309,6 +309,69 @@ impl QuickLendXContract {
         platform_fee_bps: i128,
     ) -> (i128, i128) {
         do_calculate_profit(investment_amount, payment_amount, platform_fee_bps)
+    }
+
+    // Business KYC/Verification Functions
+
+    /// Submit KYC application (business only)
+    pub fn submit_kyc_application(
+        env: Env,
+        business: Address,
+        kyc_data: String,
+    ) -> Result<(), QuickLendXError> {
+        submit_kyc_application(&env, &business, kyc_data)
+    }
+
+    /// Verify business (admin only)
+    pub fn verify_business(
+        env: Env,
+        admin: Address,
+        business: Address,
+    ) -> Result<(), QuickLendXError> {
+        verify_business(&env, &admin, &business)
+    }
+
+    /// Reject business (admin only)
+    pub fn reject_business(
+        env: Env,
+        admin: Address,
+        business: Address,
+        reason: String,
+    ) -> Result<(), QuickLendXError> {
+        reject_business(&env, &admin, &business, reason)
+    }
+
+    /// Get business verification status
+    pub fn get_business_verification_status(
+        env: Env,
+        business: Address,
+    ) -> Option<verification::BusinessVerification> {
+        get_business_verification_status(&env, &business)
+    }
+
+    /// Set admin address (initialization function)
+    pub fn set_admin(env: Env, admin: Address) {
+        BusinessVerificationStorage::set_admin(&env, &admin);
+    }
+
+    /// Get admin address
+    pub fn get_admin(env: Env) -> Option<Address> {
+        BusinessVerificationStorage::get_admin(&env)
+    }
+
+    /// Get all verified businesses
+    pub fn get_verified_businesses(env: Env) -> Vec<Address> {
+        BusinessVerificationStorage::get_verified_businesses(&env)
+    }
+
+    /// Get all pending businesses
+    pub fn get_pending_businesses(env: Env) -> Vec<Address> {
+        BusinessVerificationStorage::get_pending_businesses(&env)
+    }
+
+    /// Get all rejected businesses
+    pub fn get_rejected_businesses(env: Env) -> Vec<Address> {
+        BusinessVerificationStorage::get_rejected_businesses(&env)
     }
 }
 
